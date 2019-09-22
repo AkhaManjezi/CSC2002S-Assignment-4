@@ -63,6 +63,16 @@ public class WordApp {
 	      public void actionPerformed(ActionEvent evt) {
 	          String text = textEntry.getText();
 	          //[snip]
+			  int wordCount;
+			  for (WordRecord word : words) {
+			  	wordCount = word.getWord().length();
+				  if(word.matchWord(text)){
+				  	System.out.println("gotem");
+				  	score.caughtWord(wordCount);
+				  	break;
+				  }
+			  }
+
 	          textEntry.setText("");
 	          textEntry.requestFocus();
 	      }
@@ -82,6 +92,8 @@ public class WordApp {
 		      public void actionPerformed(ActionEvent e)
 		      {
 		    	  //[snip]
+				  Thread animations = new Thread(w);
+				  animations.start();
 		    	  textEntry.requestFocus();  //return focus to the text entry field
 		      }
 		    });
@@ -149,6 +161,7 @@ public static String[] getDictFromFile(String filename) {
 		
 		setupGUI(frameX, frameY, yLimit);  
     	//Start WordPanel thread - for redrawing animation
+
 
 		int x_inc=(int)frameX/noWords;
 	  	//initialize shared array of current words

@@ -34,7 +34,7 @@ public class WordRecord {
 	}
 	
 // all getters and setters must be synchronized
-	public synchronized  void setY(int y) {
+	public synchronized void setY(int y) {
 		if (y>maxY) {
 			y=maxY;
 			dropped=true;
@@ -42,27 +42,27 @@ public class WordRecord {
 		this.y=y;
 	}
 	
-	public synchronized  void setX(int x) {
+	public synchronized void setX(int x) {
 		this.x=x;
 	}
 	
-	public synchronized  void setWord(String text) {
+	public synchronized void setWord(String text) {
 		this.text=text;
 	}
 
-	public synchronized  String getWord() {
+	public synchronized String getWord() {
 		return text;
 	}
 	
-	public synchronized  int getX() {
+	public synchronized int getX() {
 		return x;
 	}	
 	
-	public synchronized  int getY() {
+	public synchronized int getY() {
 		return y;
 	}
 	
-	public synchronized  int getSpeed() {
+	public synchronized int getSpeed() {
 		return fallingSpeed;
 	}
 

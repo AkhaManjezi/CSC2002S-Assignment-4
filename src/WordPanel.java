@@ -42,6 +42,19 @@ public class WordPanel extends JPanel implements Runnable {
 		
 		public void run() {
 			//add in code to animate this
+			while(!done) {
+				for (WordRecord word : words) {
+					int inc = Math.max(1, word.getSpeed()/maxY);
+					word.drop(inc);
+					System.out.println("falling");
+				}
+				repaint();
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 	}
