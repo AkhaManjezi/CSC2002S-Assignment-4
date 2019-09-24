@@ -5,14 +5,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
 
-import javax.swing.JButton;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 public class WordPanel extends JPanel implements Runnable {
 		public static volatile boolean done;
 		private WordRecord[] words;
 		private int noWords;
 		private int maxY;
+		private Score score;
+		private JLabel missed;
+		private JLabel scr;
 
 		
 		public void paintComponent(Graphics g) {
@@ -33,11 +35,14 @@ public class WordPanel extends JPanel implements Runnable {
 		   
 		  }
 		
-		WordPanel(WordRecord[] words, int maxY) {
+		WordPanel(WordRecord[] words, int maxY, Score score, JLabel missed, JLabel scr) {
 			this.words=words; //will this work?
 			noWords = words.length;
 			done=false;
-			this.maxY=maxY;		
+			this.maxY=maxY;
+			this.score = score;
+			this.missed = missed;
+			this.scr = scr;
 		}
 		
 		public void run() {
@@ -46,14 +51,19 @@ public class WordPanel extends JPanel implements Runnable {
 				for (WordRecord word : words) {
 					int inc = Math.max(1, word.getSpeed()/maxY);
 					word.drop(inc);
-					System.out.println("falling");
+					int pos = word.getY();
+					if (pos >= (maxY-10)) {
+						word.resetWord();
+						score.missedWord();
+					}
 				}
 				repaint();
 				try {
-					Thread.sleep(300);
+					Thread.sleep(10);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+
 			}
 		}
 

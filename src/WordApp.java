@@ -27,8 +27,10 @@ public class WordApp {
 	static 	Score score = new Score();
 
 	static WordPanel w;
-	
-	
+
+	static JLabel caught;
+	static JLabel missed;
+	static JLabel scr;
 	
 	public static void setupGUI(int frameX,int frameY,int yLimit) {
 		// Frame init and dimensions
@@ -41,16 +43,16 @@ public class WordApp {
       	g.setSize(frameX,frameY);
  
     	
-		w = new WordPanel(words,yLimit);
+		w = new WordPanel(words,yLimit,score,missed,scr);
 		w.setSize(frameX,yLimit+100);
 	    g.add(w);
 	    
 	    
 	    JPanel txt = new JPanel();
 	    txt.setLayout(new BoxLayout(txt, BoxLayout.LINE_AXIS)); 
-	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    ");
-	    JLabel missed =new JLabel("Missed:" + score.getMissed()+ "    ");
-	    JLabel scr =new JLabel("Score:" + score.getScore()+ "    ");    
+	    caught =new JLabel("Caught: " + score.getCaught() + "    ");
+	    missed =new JLabel("Missed:" + score.getMissed()+ "    ");
+	    scr =new JLabel("Score:" + score.getScore()+ "    ");
 	    txt.add(caught);
 	    txt.add(missed);
 	    txt.add(scr);
@@ -67,11 +69,13 @@ public class WordApp {
 			  for (WordRecord word : words) {
 			  	wordCount = word.getWord().length();
 				  if(word.matchWord(text)){
-				  	System.out.println("gotem");
 				  	score.caughtWord(wordCount);
+					  caught.setText("Caught: " + score.getCaught() + "    ");
+					  scr.setText("Score:" + score.getScore() + "    ");
 				  	break;
 				  }
 			  }
+
 
 	          textEntry.setText("");
 	          textEntry.requestFocus();
@@ -170,6 +174,31 @@ public static String[] getDictFromFile(String filename) {
 			words[i]=new WordRecord(dict.getNewWord(),i*x_inc,yLimit);
 		}
 
+		Thread background = new Thread(() -> {
+			while (!w.done) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+//					for (WordRecord word : words) {
+//						int pos = word.getY();
+//						if (pos >= (word.maxY - 10)) {
+//							word.resetWord();
+//							score.missedWord();
+						missed.setText("Missed:" + score.getMissed() + "    ");
+						if(score.getCaught()>=totalWords){
+							w.done = true;
+						}
+//						}
+//					}
+			}
+		});
+		background.start();
+
+	}
+
+	public static void fallen(){
 
 	}
 
