@@ -1,14 +1,9 @@
 import javax.swing.*;
-
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileInputStream;
 import java.io.IOException;
-
-
 import java.util.Scanner;
-import java.util.concurrent.*;
 //model is separate from the view.
 
 public class WordApp {
@@ -41,6 +36,7 @@ public class WordApp {
         JFrame frame = new JFrame("WordGame");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(frameX, frameY);
+        frame.setResizable(false);
 
         JPanel g = new JPanel();
         g.setLayout(new BoxLayout(g, BoxLayout.PAGE_AXIS));
@@ -48,6 +44,7 @@ public class WordApp {
 
 
         w = new WordPanel(words, yLimit, score);
+        w.repaint = false;
         w.setSize(frameX, yLimit + 100);
         g.add(w);
 
@@ -61,10 +58,10 @@ public class WordApp {
         txt.add(missed);
         txt.add(scr);
 
-        //[snip]
 
         textEntry = new JTextField("", 20);
         textEntry.addActionListener(new ActionListener() {
+            //when the user enters a guess, this checks if is correct and updates accordingly
             public void actionPerformed(ActionEvent evt) {
                 String text = textEntry.getText();
                 //[snip]
@@ -98,14 +95,15 @@ public class WordApp {
         // add the listener to the jbutton to handle the "pressed" event
         startB.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                //[snip]
-                if(w.done){
-					w.done = false;
-					w.repaint = true;
-					w.repaint();
-					w.run();
+                //if the the game has finished and the user wants to restart, a new session loads
+                if (w.done) {
+                    w.done = false;
+                    w.repaint = true;
+                    w.repaint();
+                    w.run();
                     textEntry.setEnabled(true);
-				}else {
+                } else {
+                    //if a game is already running and a user wants to restart, new words are loaded and the game starts again; otherwise, the game starts for the first time
                     if (running) {
                         score.resetScore();
                         for (WordRecord word : words) {
@@ -116,11 +114,11 @@ public class WordApp {
                         scr.setText("Score:" + score.getScore() + "    ");
                         animations.run();
                     } else {
+                        w.repaint = true;
+                        w.repaint();
                         animations.start();
                     }
                 }
-
-//				  animations.start();
                 running = true;
                 textEntry.requestFocus();  //return focus to the text entry field
             }
@@ -128,32 +126,24 @@ public class WordApp {
         JButton endB = new JButton("End");
         ;
 
-        // add the listener to the jbutton to handle the "pressed" event
+        //when the end button is pressed, the game is stopped by calling the reset method
         endB.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 //[snip]
-
-                w.repaint = false;
-                w.repaint();
-                running = false;
-                for (WordRecord word : words) {
-                    word.resetWord();
-                }
-                w.done = true;
-
+                reset();
             }
         });
 
-		JButton quitB = new JButton("Quit");
-		;
+        JButton quitB = new JButton("Quit");
+        ;
 
-		// add the listener to the jbutton to handle the "pressed" event
-		quitB.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-			    System.exit(0);
-
-			}
-		});
+        // when the quit button is pressed, the animations stop and the application closes
+        quitB.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                animations.interrupt();
+                System.exit(0);
+            }
+        });
 
         b.add(startB);
         b.add(endB);
@@ -205,7 +195,6 @@ public class WordApp {
 
         words = new WordRecord[noWords];  //shared array of current words
 
-        //[snip]
 
         setupGUI(frameX, frameY, yLimit);
         //Start WordPanel thread - for redrawing animation
@@ -218,6 +207,7 @@ public class WordApp {
             words[i] = new WordRecord(dict.getNewWord(), i * x_inc, yLimit);
         }
 
+        //updates the number of missed words and checks if word limit has been reached
         Thread background = new Thread(() -> {
             while (true) {
                 try {
@@ -227,16 +217,35 @@ public class WordApp {
                 }
                 missed.setText("Missed:" + score.getMissed() + "    ");
                 if (score.getCaught() >= totalWords) {
+                    int finalScore = score.getScore();
+                    int finalCaught = score.getCaught();
+                    int finalMissed = score.getMissed();
+                    int totalWords = score.getTotal();
                     w.done = true;
                     textEntry.setEnabled(false);
-
+                    JOptionPane.showMessageDialog(w, String.format("Your score was %s\nYou caught %s words\nYou missed %s words\nYou had %s words in total", finalScore, finalCaught, finalMissed, totalWords), "You won", JOptionPane.INFORMATION_MESSAGE);
+                    reset();
                 }
-//						}
-//					}
             }
         });
         background.start();
 
+    }
+
+    /**
+     * resets the score and clears the GUI
+     */
+    private static void reset() {
+        score.resetScore();
+        w.repaint = false;
+        w.repaint();
+        running = false;
+        w.done = true;
+        for (WordRecord word : words) {
+            word.resetWord();
+        }
+        caught.setText("Caught: " + score.getCaught() + "    ");
+        scr.setText("Score:" + score.getScore() + "    ");
     }
 
 }
