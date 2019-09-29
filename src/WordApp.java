@@ -30,6 +30,8 @@ public class WordApp {
     static boolean running;
     static Thread animations;
     static JTextField textEntry;
+    static JButton endB;
+    static JButton pauseB;
 
     public static void setupGUI(int frameX, int frameY, int yLimit) {
         // Frame init and dimensions
@@ -43,7 +45,7 @@ public class WordApp {
         g.setSize(frameX, frameY);
 
 
-        w = new WordPanel(words, yLimit, score);
+        w = new WordPanel(words, yLimit);
         w.repaint = false;
         w.setSize(frameX, yLimit + 100);
         g.add(w);
@@ -58,6 +60,7 @@ public class WordApp {
         txt.add(missed);
         txt.add(scr);
 
+        pauseB = new JButton("Pause");
 
         textEntry = new JTextField("", 20);
         textEntry.addActionListener(new ActionListener() {
@@ -77,6 +80,19 @@ public class WordApp {
                 }
                 textEntry.setText("");
                 textEntry.requestFocus();
+
+                if (score.getCaught() >= totalWords) {
+                    int finalScore = score.getScore();
+                    int finalCaught = score.getCaught();
+                    int finalMissed = score.getMissed();
+                    int totalWords = score.getTotal();
+                    w.done = true;
+                    textEntry.setEnabled(false);
+                    JOptionPane.showMessageDialog(w, String.format("Your score was %s\nYou caught %s words\nYou missed %s words\nYou interacted with %s words", finalScore, finalCaught, finalMissed, totalWords), "You won", JOptionPane.INFORMATION_MESSAGE);
+                    endB.setEnabled(false);
+                    pauseB.setEnabled(false);
+                    reset();
+                }
             }
         });
 
@@ -96,13 +112,19 @@ public class WordApp {
         startB.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 //if the the game has finished and the user wants to restart, a new session loads
+                textEntry.setEnabled(true);
+                endB.setEnabled(true);
+                pauseB.setEnabled(true);
+                pauseB.setText("Pause");
                 if (w.done) {
+                    w.paused = false;
                     w.done = false;
                     w.repaint = true;
                     w.repaint();
                     w.run();
                     textEntry.setEnabled(true);
                 } else {
+                    w.paused = false;
                     //if a game is already running and a user wants to restart, new words are loaded and the game starts again; otherwise, the game starts for the first time
                     if (running) {
                         score.resetScore();
@@ -112,6 +134,7 @@ public class WordApp {
                         w.repaint();
                         caught.setText("Caught: " + score.getCaught() + "    ");
                         scr.setText("Score:" + score.getScore() + "    ");
+                        missed.setText("Missed:" + score.getMissed() + "    ");
                         animations.run();
                     } else {
                         w.repaint = true;
@@ -123,7 +146,8 @@ public class WordApp {
                 textEntry.requestFocus();  //return focus to the text entry field
             }
         });
-        JButton endB = new JButton("End");
+
+         endB = new JButton("End");
         ;
 
         //when the end button is pressed, the game is stopped by calling the reset method
@@ -131,9 +155,12 @@ public class WordApp {
             public void actionPerformed(ActionEvent e) {
                 //[snip]
                 reset();
+                endB.setEnabled(false);
+                pauseB.setEnabled(false);
             }
         });
 
+        endB.setEnabled(false);
         JButton quitB = new JButton("Quit");
         ;
 
@@ -144,8 +171,27 @@ public class WordApp {
                 System.exit(0);
             }
         });
+        ;
+
+        // when the quit button is pressed, the animations stop and the application closes
+        pauseB.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if(!w.paused){
+                    w.paused = true;
+                    textEntry.setEnabled(false);
+                    pauseB.setText("Resume");
+                }else{
+                    w.paused = false;
+                    textEntry.setEnabled(true);
+                    pauseB.setText("Pause");
+                    textEntry.requestFocus();
+                }
+            }
+        });
+        pauseB.setEnabled(false);
 
         b.add(startB);
+        b.add(pauseB);
         b.add(endB);
         b.add(quitB);
 
@@ -208,27 +254,25 @@ public class WordApp {
         }
 
         //updates the number of missed words and checks if word limit has been reached
-        Thread background = new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+
+        for(WordRecord word : words){
+            Thread wordThread = new Thread(() -> {    //creates a thread for each word to fall
+                while (!false) {
+                    int pos = word.getY();
+                    if (pos >= (yLimit - 10)) {    //if w word enters the red zone, it is reset and the missed word score is incremented
+                        word.resetWord();
+                        score.missedWord();
+                        missed.setText("Missed:" + score.getMissed() + "    ");
+                    }
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-                missed.setText("Missed:" + score.getMissed() + "    ");
-                if (score.getCaught() >= totalWords) {
-                    int finalScore = score.getScore();
-                    int finalCaught = score.getCaught();
-                    int finalMissed = score.getMissed();
-                    int totalWords = score.getTotal();
-                    w.done = true;
-                    textEntry.setEnabled(false);
-                    JOptionPane.showMessageDialog(w, String.format("Your score was %s\nYou caught %s words\nYou missed %s words\nYou had %s words in total", finalScore, finalCaught, finalMissed, totalWords), "You won", JOptionPane.INFORMATION_MESSAGE);
-                    reset();
-                }
-            }
-        });
-        background.start();
+            });
+            wordThread.start();
+        }
 
     }
 
@@ -237,15 +281,18 @@ public class WordApp {
      */
     private static void reset() {
         score.resetScore();
+        w.paused = false;
         w.repaint = false;
         w.repaint();
         running = false;
         w.done = true;
+        pauseB.setText("Pause");
         for (WordRecord word : words) {
             word.resetWord();
         }
         caught.setText("Caught: " + score.getCaught() + "    ");
         scr.setText("Score:" + score.getScore() + "    ");
+        missed.setText("Missed:" + score.getMissed() + "    ");
     }
 
 }

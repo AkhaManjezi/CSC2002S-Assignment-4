@@ -74,7 +74,7 @@ public class WordRecord {
         setY(0);
     }
 
-    public synchronized void resetWord() {
+    public void resetWord() {
         resetPos();
         text = dict.getNewWord();
         dropped = false;
@@ -83,7 +83,7 @@ public class WordRecord {
 
     }
 
-    public synchronized boolean matchWord(String typedText) {
+    public boolean matchWord(String typedText) {
         //System.out.println("Matching against: "+text);
         if (typedText.equals(this.text)) {
             resetWord();
@@ -93,11 +93,11 @@ public class WordRecord {
     }
 
 
-    public synchronized void drop(int inc) {
+    public void drop(int inc) {
         setY(y + inc);
     }
 
-    public synchronized boolean dropped() {
+    public boolean dropped() {
         return dropped;
     }
 
